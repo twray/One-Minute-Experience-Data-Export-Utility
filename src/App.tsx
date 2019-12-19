@@ -1,7 +1,7 @@
 import React from 'react';
 import './App.css';
 
-import EventLogService from './services/EventLogService';
+import CSVExportService from './services/CSVExportService';
 
 interface AppProps {};
 
@@ -12,16 +12,14 @@ interface AppState {
 
 class App extends React.Component<AppProps, AppState> {
 
-  eventLogService: EventLogService = new EventLogService();
-
   state = {
     filename: 'nodes.csv',
     filedata: 'a,b,c\nd,e,f'
   }
 
   async componentDidMount() {
-    const events = await this.eventLogService.getScanEvents(new Date('2019-11-08'));
-    console.log(events);
+    const csvExportService = new CSVExportService(new Date('2019-11-08'));
+    await csvExportService.getNodes();
   }
 
   render() {
