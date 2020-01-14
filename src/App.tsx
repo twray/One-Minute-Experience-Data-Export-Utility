@@ -1,9 +1,49 @@
 import React from 'react';
 import './App.css';
 
+import styled from 'styled-components';
+
 import { Artwork } from './model/Artwork';
 
 import CSVExportService from './services/CSVExportService';
+
+import Button from './components/Button';
+
+const AppContainer = styled.div`
+  background-color: #37474F;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const AppArea = styled.div`
+  margin: 0;
+  padding: 0 60px;
+  max-width: 275px;
+  max-height: 667px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #FFFFFF;
+  @media screen and (max-width: 576px) {
+    height: auto;
+  }
+  p {
+    text-align: center;
+  }
+  a {
+    text-decoration: none;
+    margin: 15px 0;
+  }
+`;
 
 interface AppProps {};
 
@@ -44,30 +84,31 @@ class App extends React.Component<AppProps, AppState> {
       edges_filedata
     } = this.state;
     return (
-      <div className="App">
-        <header className="App-header">
+      <AppContainer>
+        <AppArea>
+          <p>
+            Here, you can download a CSV data export can be used to visualise the objects in your museum and the time visitors spend reading them.
+          </p>
           <a
-            className="App-link"
             href={
               'data:text/plain;charset=utf-8,' +
               encodeURIComponent(nodes_filedata)
             }
             download={nodes_filename}
           >
-            Download Nodes
+            <Button buttonStyle="white-transparent" text="Download Nodes" />
           </a>
           <a
-            className="App-link"
             href={
               'data:text/plain;charset=utf-8,' +
               encodeURIComponent(edges_filedata)
             }
             download={edges_filename}
           >
-            Download Edges
+            <Button buttonStyle="white-transparent" text="Download Edges" />
           </a>
-        </header>
-      </div>
+        </AppArea>
+      </AppContainer>
     );
   }
 }
