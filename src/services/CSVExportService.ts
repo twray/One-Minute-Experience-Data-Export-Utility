@@ -115,17 +115,17 @@ class CSVExportService {
 
   async getCSVExports(): Promise<CSVExports> {
 
-    let nodes: string = 'id,node_type,label,number_visits' + "\r\n";
-    let edges: string = 'id,session_id,artwork_id,visit_duration,total_number_visits_in_session' + "\r\n";
+    let nodes: string = "id,node_type,label,number_visits\r\n";
+    let edges: string = "id,session_id,artwork_id,visit_duration,total_number_visits_in_session\r\n";
 
     const nodesAndEdges = await this.getNodesAndEdges();
 
     nodesAndEdges.nodes.forEach((node: VisualisationNode) => {
-      nodes += `"${node.id}","${node.node_type}","${node.label}",${node.number_visits}` + "\r\n";
+      nodes += `"${node.id}","${node.node_type}","${node.label}",${node.number_visits}\r\n`;
     });
 
     nodesAndEdges.edges.forEach((edge: VisualisationEdge) => {
-      edges += `"${edge.id}","${edge.session_id}","${edge.artwork_id}",${edge.visit_duration},${edge.total_number_visits_in_session}` + "\r\n";
+      edges += `"${edge.id}","${edge.session_id}","${edge.artwork_id}",${edge.visit_duration},${edge.total_number_visits_in_session}\r\n`;
     });
 
     return { nodes, edges };

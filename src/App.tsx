@@ -54,7 +54,7 @@ class App extends React.Component<AppProps, AppState> {
             }
             download={nodes_filename}
           >
-            Download Node List
+            Download Nodes
           </a>
           <a
             className="App-link"
@@ -64,7 +64,7 @@ class App extends React.Component<AppProps, AppState> {
             }
             download={edges_filename}
           >
-            Download Edge List
+            Download Edges
           </a>
         </header>
       </div>
