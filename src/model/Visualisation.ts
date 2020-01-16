@@ -22,3 +22,8 @@ export interface CSVExports {
   nodes: string,
   edges: string
 }
+
+export interface Visualisation {
+  has_data: boolean,
+  csv_exports: CSVExports
+}

@@ -2,9 +2,7 @@ import React, { ChangeEvent } from 'react';
 import './App.css';
 
 import styled from 'styled-components';
-import moment from 'moment';
-
-import { Artwork } from './model/Artwork';
+import moment, { Moment } from 'moment';
 
 import CSVExportService from './services/CSVExportService';
 
@@ -13,37 +11,35 @@ import SingleLineDateInput from './components/SingleLineDateInput';
 
 const AppContainer = styled.div`
   background-color: #37474F;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
 `;
 
 const AppArea = styled.div`
   margin: 0;
-  padding: 0 60px;
-  max-width: 450px;
-  max-height: 667px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  padding: 120px 60px;
+  max-width: 550px;
   color: #FFFFFF;
   @media screen and (max-width: 576px) {
     height: auto;
-  }
-  p {
-    text-align: center;
+    padding: 15px;
   }
   a {
     text-decoration: none;
-    margin: 15px 0;
+  }
+  Button {
+    margin: 20px 0;
+  }
+`;
+
+const ButtonBar = styled.div`
+  display: flex;
+  flex-direction: row;
+  a + a {
+    margin-left: 20px;
   }
 `;
 
@@ -53,11 +49,17 @@ interface AppState {
   search_startdate: string,
   search_enddate: string,
   dates_are_valid: boolean,
+  is_searching_dates: boolean,
+  has_searched_for_dates: boolean,
+  has_search_network_error: boolean,
+  has_data_for_dates: boolean,
   nodes_filename: string,
   nodes_filedata: string,
   edges_filename: string,
   edges_filedata: string
 };
+
+const DATE_FORMAT = "YYYY-MM-DD";
 
 class App extends React.Component<AppProps, AppState> {
 
@@ -65,55 +67,110 @@ class App extends React.Component<AppProps, AppState> {
     search_startdate: '',
     search_enddate: '',
     dates_are_valid: false,
+    is_searching_dates: false,
+    has_searched_for_dates: false,
+    has_search_network_error: false,
+    has_data_for_dates: false,
     nodes_filename: 'nodes.csv',
     nodes_filedata: '',
     edges_filename: 'edges.csv',
     edges_filedata: ''
   }
 
-  async componentDidMount() {
-    /*
-    const csvExportService = new CSVExportService(
-      new Date('2019-11-08'),
-      new Date('2019-11-08'),
-      new Artwork(351, 'Queen Victoria with Royal Pavilion in Background', 'H Jones')
-    );
-    const csvExports = await csvExportService.getCSVExports();
-    this.setState({
-      nodes_filedata: csvExports.nodes,
-      edges_filedata: csvExports.edges
-    });
-    */
-  }
-
   handleStartDateChange = (e: ChangeEvent<HTMLInputElement>) => {
-    this.setState({ search_startdate: e.target.value }, () => {
-      this.setState({ dates_are_valid: this.datesAreValid() });
+
+    const search_startdate = e.target.value;
+    let { search_enddate } = this.state;
+    const startdate: Moment = moment(search_startdate, DATE_FORMAT, true);
+    let enddate: Moment = moment(search_enddate, DATE_FORMAT, true);
+
+    if (startdate.isValid() && !search_enddate) {
+      enddate = startdate
+    }
+
+    this.setState({
+      search_startdate: startdate.format(DATE_FORMAT),
+      search_enddate: enddate.format(DATE_FORMAT),
+      dates_are_valid: this.datesAreValid(startdate, enddate)
     });
+
   }
 
   handleEndDateChange = (e: ChangeEvent<HTMLInputElement>) => {
-    this.setState({ search_enddate: e.target.value }, () => {
-      this.setState({ dates_are_valid: this.datesAreValid() });
+
+    let { search_startdate } = this.state;
+    const search_enddate = e.target.value;
+    let startdate: Moment = moment(this.state.search_startdate, DATE_FORMAT, true);
+    const enddate: Moment = moment(search_enddate, DATE_FORMAT, true);
+
+    if (enddate.isValid() && !search_startdate) {
+      startdate = enddate
+    }
+
+    this.setState({
+      search_startdate: startdate.format(DATE_FORMAT),
+      search_enddate: enddate.format(DATE_FORMAT),
+      dates_are_valid: this.datesAreValid(startdate, enddate)
     });
+
   }
 
-  datesAreValid = (): boolean => {
+  handleSearchDatesButtonClick = async () => {
 
     const { search_startdate, search_enddate } = this.state;
 
-    return (
-      moment(search_startdate, "YYYY-MM-DD").isValid() &&
-      moment(search_enddate, "YYYY-MM-DD").isValid()
-    )
+    this.setState({is_searching_dates: true});
+
+    const csvExportService = new CSVExportService(
+      new Date(search_startdate),
+      new Date(search_enddate)
+    );
+
+    let hasSearchNetworkError = false;
+    let visualisation;
+
+    try {
+      visualisation = await csvExportService.getCSVExports();
+    } catch {
+      hasSearchNetworkError = true;
+    }
+
+    if (!hasSearchNetworkError && visualisation?.has_data) {
+      this.setState({
+        is_searching_dates: false,
+        has_searched_for_dates: true,
+        has_search_network_error: hasSearchNetworkError,
+        has_data_for_dates: true,
+        nodes_filedata: visualisation.csv_exports.nodes,
+        edges_filedata: visualisation.csv_exports.edges
+      });
+    } else {
+      this.setState({
+        is_searching_dates: false,
+        has_searched_for_dates: true,
+        has_search_network_error: hasSearchNetworkError,
+        has_data_for_dates: false
+      });
+    }
 
   }
+
+  datesAreValid = (startdate: Moment, enddate: Moment) => {
+    let now: Moment = moment();
+    return startdate.isValid() && !startdate.isAfter(now) &&
+           enddate.isValid() && !enddate.isAfter(now) &&
+           !startdate.isAfter(enddate)
+  };
 
   render() {
     const {
       search_startdate,
       search_enddate,
       dates_are_valid,
+      is_searching_dates,
+      has_searched_for_dates,
+      has_search_network_error,
+      has_data_for_dates,
       nodes_filename,
       nodes_filedata,
       edges_filename,
@@ -127,7 +184,7 @@ class App extends React.Component<AppProps, AppState> {
             One Minute records visitor data, including the time they spent viewing artworks and reading stories. You can download a CSV data export can be used to visualise how visitors interact with your objects.
           </p>
           <p>
-            Begin by selecting the date range of your data export. For example, if you would like to visualise all visitor interactions that took place under a particular exhibition, set the following dates so that they correspond to the beginning and end of that exhibition.
+            Begin by selecting the date range of your data export. For example, if you would like to visualise all visitor interactions that took place during an exhibition, set the following dates so that they correspond to the beginning and end of that exhibition.
           </p>
           <SingleLineDateInput
             inputStyle="dark"
@@ -144,8 +201,9 @@ class App extends React.Component<AppProps, AppState> {
           <p></p>
           <Button
             buttonStyle="white-transparent"
-            text="Continue"
-            disabled={!dates_are_valid}
+            text="Search Dates"
+            disabled={!dates_are_valid && !is_searching_dates}
+            onClick={this.handleSearchDatesButtonClick}
           />
           {false &&
             <>
@@ -167,6 +225,48 @@ class App extends React.Component<AppProps, AppState> {
               >
                 <Button buttonStyle="white-transparent" text="Download Edges" />
               </a>
+            </>
+          }
+          {is_searching_dates && <p>Please wait ...</p>}
+          {!is_searching_dates && has_searched_for_dates &&
+            <>
+              {has_data_for_dates &&
+                <>
+                  <p>
+                    Your export is available to download as two CSV files: nodes.csv and edges.csv. Both files are required for the visualisation.
+                  </p>
+                  <ButtonBar>
+                    <a
+                      href={
+                        'data:text/plain;charset=utf-8,' +
+                        encodeURIComponent(nodes_filedata)
+                      }
+                      download={nodes_filename}
+                    >
+                      <Button
+                        buttonStyle="white-transparent"
+                        text="Download Nodes" />
+                    </a>
+                    <a
+                      href={
+                        'data:text/plain;charset=utf-8,' +
+                        encodeURIComponent(edges_filedata)
+                      }
+                      download={edges_filename}
+                    >
+                      <Button
+                        buttonStyle="white-transparent"
+                        text="Download Edges" />
+                    </a>
+                  </ButtonBar>
+                </>
+              }
+              {!has_data_for_dates && !has_search_network_error &&
+                <p>No visitor data available for these dates.</p>
+              }
+              {has_search_network_error &&
+                <p>A problem occurred while exporting your data.</p>
+              }
             </>
           }
         </AppArea>

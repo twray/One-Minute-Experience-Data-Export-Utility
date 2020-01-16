@@ -5,7 +5,7 @@ import styled from 'styled-components';
 
 const ButtonContainer = styled.button`
   display: block;
-  min-width: 125px;
+  min-width: 160px;
   padding: 0 18px;
   height: 48px;
   border: none;

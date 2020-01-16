@@ -2,10 +2,10 @@ import { EventLog } from '../model/EventLog';
 import { Artwork, ArtworkAndTotalVisits} from '../model/Artwork';
 import { Session, SessionAndTotalVisits } from '../model/Session';
 import {
+  Visualisation,
   VisualisationNodesAndEdges,
   VisualisationNode,
-  VisualisationEdge,
-  CSVExports
+  VisualisationEdge
 } from '../model/Visualisation';
 
 import EventLogService from './EventLogService';
@@ -113,12 +113,13 @@ class CSVExportService {
 
   }
 
-  async getCSVExports(): Promise<CSVExports> {
+  async getCSVExports(): Promise<Visualisation> {
 
     let nodes: string = "id,node_type,label,number_visits\r\n";
     let edges: string = "id,session_id,artwork_id,visit_duration,total_number_visits_in_session\r\n";
 
     const nodesAndEdges = await this.getNodesAndEdges();
+    const hasData = nodesAndEdges.nodes.length > 0 || nodesAndEdges.edges.length > 0 ? true : false;
 
     nodesAndEdges.nodes.forEach((node: VisualisationNode) => {
       nodes += `"${node.id}","${node.node_type}","${node.label}",${node.number_visits}\r\n`;
@@ -128,7 +129,10 @@ class CSVExportService {
       edges += `"${edge.id}","${edge.session_id}","${edge.artwork_id}",${edge.visit_duration},${edge.total_number_visits_in_session}\r\n`;
     });
 
-    return { nodes, edges };
+    return {
+      has_data: hasData,
+      csv_exports: { nodes, edges }
+    }
 
   }
 
